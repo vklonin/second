@@ -7,5 +7,4 @@ public class Evaluation {
     private double v;
     private int d;
 
-    // getters and setters
 }

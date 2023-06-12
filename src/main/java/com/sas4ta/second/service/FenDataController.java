@@ -17,9 +17,9 @@ public class FenDataController {
         this.fenDataService = fenDataService;
     }
 
-    @GetMapping("/fenbase")
-    public List<ChessMove> getAllFenData() {
-        return fenDataService.getAllFenData();
+    @GetMapping("/base")
+    public List<ChessMove> getAllData() {
+        return fenDataService.getAllData();
     }
 
 //    @GetMapping("/fendata")

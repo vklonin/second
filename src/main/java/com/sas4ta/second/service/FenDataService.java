@@ -10,15 +10,15 @@ import java.util.List;
 @Service
 public class FenDataService {
 
-    private final ChessMoveRepository fenDataRepository;
+    private final ChessMoveRepository chessMoveRepository;
 
     @Autowired
-    public FenDataService(ChessMoveRepository fenDataRepository) {
-        this.fenDataRepository = fenDataRepository;
+    public FenDataService(ChessMoveRepository chessMoveRepository) {
+        this.chessMoveRepository = chessMoveRepository;
     }
 
-    public List<ChessMove> getAllFenData() {
-        return fenDataRepository.findAll();
+    public List<ChessMove> getAllData() {
+        return chessMoveRepository.findAll();
     }
 
 //    public ChessMove getFenDataByFen(String fen) {
