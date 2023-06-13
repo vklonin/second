@@ -1,32 +1,36 @@
 package com.sas4ta.second.data;
 
-import chesspresso.*;
 import chesspresso.position.*;
 import chesspresso.move.*;
 import com.fasterxml.jackson.databind.*;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ChessMovesToFen {
+
+    static Map<Integer, String> numberToLetterMap = new HashMap<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static void parser(String data) {
-        try {
-            String jsonInput = data;
-            Map<String, Object> chessData = objectMapper.readValue(jsonInput, Map.class);
+    public static List<ChessMoveFen> parser(String data) {
 
-            List<Object[]> fenData = generateFenData(chessData);
-            System.out.println(objectMapper.writeValueAsString(fenData));
+        List<ChessMoveFen> fenData = null;
+        try {
+            Map<String, Object> chessData = objectMapper.readValue(data, Map.class);
+
+            fenData = generateFenData(chessData);
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        return fenData;
     }
 
-    private static List<Object[]> generateFenData(Map<String, Object> data) {
+    private static List<ChessMoveFen> generateFenData(Map<String, Object> data) {
         Position position = new Position(Position.createInitialPosition());
-        List<Object[]> result = new ArrayList<>();
+        List<ChessMoveFen> result = new ArrayList<>();
 
         parseMove(data, position, result);
 
@@ -42,37 +46,75 @@ public class ChessMovesToFen {
         return rank * 8 + file;
     }
 
-    private static void parseMove(Map<String, Object> moveData, Position position, List<Object[]> result) {
-        String moveString = (String) moveData.get("m");
+    private static void parseMove(Map<String, Object> moveData, Position position, List<ChessMoveFen> result) {
+
+        numberToLetterMap.put(5, "P");
+        numberToLetterMap.put(1, "N");
+        numberToLetterMap.put(2, "B");
+        numberToLetterMap.put(4, "R");
+        numberToLetterMap.put(3, "Q");
+        numberToLetterMap.put(6, "K");
+
+        String moveStringInitial = (String) moveData.get("m");
+        String moveString = moveStringInitial.replace("+","");
         if (!moveString.isEmpty()) {
             try {
 
-                String source;
-                String destination;
-                char pieceSymbol = moveString.charAt(0);
-                Boolean isCapture = false;
 
-                if (moveString.length() == 2) {
-                    source = "";
-                    destination = moveString;
-                } else if (moveString.length() == 3 && Character.isUpperCase(pieceSymbol)) {
-                    destination = moveString.substring(1, 3);
-                    source = "";
-                } else if (moveString.length() >= 3 && moveString.contains("x")) {
-                        // Ход с взятием
-                        source = "";//moveString.substring(0, moveString.indexOf('x'));
-                        destination = moveString.substring(moveString.indexOf('x') + 1);
-                        isCapture = true;
-                } else {
-                    source = moveString.substring(0, 2);
-                    destination = moveString.substring(2);
+                String pieceSymbol = moveString.substring(0, 1);
+
+                short[] allMoves = position.getAllMoves();
+                Short[] wrappedMoves = new Short[allMoves.length];
+                for (int i = 0; i < allMoves.length; i++) {
+                    wrappedMoves[i] = Short.valueOf(allMoves[i]);
                 }
 
-                var move = Move.getRegularMove(coordToSqi(source),
-                        coordToSqi(destination),
-                        isCapture);
-                position.doMove(move);
+                Short moveShort = -1;
 
+                try {
+
+                    if (moveString.length() == 2) {
+
+                        moveShort = Arrays.stream(wrappedMoves).filter(e -> {
+                            var move = Move.getString(e);
+                            return move.substring(move.length() - 2).equals(moveString);
+                        }).findAny().get();
+
+                    } else if (moveString.length() >= 3 && Character.isUpperCase(pieceSymbol.charAt(0))) {
+                        List<Short> collectedMoves = Arrays.stream(wrappedMoves).filter(e -> {
+                            var move = Move.getString(e);
+                            return move.substring(move.length() - 2).equals(moveString.substring(moveString.length() - 2));
+                        }).collect(Collectors.toList());
+                        if (collectedMoves.size() > 1) {
+
+                            moveShort = collectedMoves.stream().filter(e -> numberToLetterMap.get(position.getPiece(Move.getFromSqi(e))).equals(pieceSymbol)).findAny().get();
+
+                        } else {
+                            moveShort = collectedMoves.get(0);
+                        }
+
+                    } else if (moveString.length() >= 3 && moveString.contains("x")) {
+                        List<Short> collectedMoves = Arrays.stream(wrappedMoves).filter(e -> {
+                            var move = Move.getString(e);
+                            return move.substring(move.length() - 2).equals(moveString.substring(2));
+                        }).collect(Collectors.toList());
+                        if (collectedMoves.size() > 1) {
+                            moveShort = collectedMoves.stream().filter(e -> numberToLetterMap.get(position.getPiece(Move.getFromSqi(e))).equals(pieceSymbol)).findAny().get();
+                        } else {
+                            moveShort = collectedMoves.get(0);
+                        }
+                    } else {
+                        moveShort = Arrays.stream(wrappedMoves).filter(e -> {
+                            var move = Move.getString(e);
+                            return move.equals(moveString.replace("-", ""));
+                        }).findAny().get();
+                    }
+                } catch (Exception e) {
+                    return;
+                }
+
+
+                position.doMove(moveShort);
 
             } catch (IllegalMoveException e) {
                 System.err.println("Illegal move: " + moveString);
@@ -85,7 +127,7 @@ public class ChessMovesToFen {
         if (moveInfo == null) {
 
             String bestMove = (String) moveData.get("m");
-            result.add(new Object[]{position.getFEN(), new MoveInfo(bestMove, 0, 0)});
+            result.add(new ChessMoveFen(position.getFEN(),new MoveInfo(bestMove, 0, 0)));
 
         } else {
 
@@ -93,10 +135,9 @@ public class ChessMovesToFen {
             double score = ((Number) moveInfo.get("v")).doubleValue();
             double depth = ((Number) moveInfo.get("d")).doubleValue();
 
-            result.add(new Object[]{position.getFEN(), new MoveInfo(bestMove, score, depth)});
+
+            result.add(new ChessMoveFen(position.getFEN(), new MoveInfo(bestMove, score, depth)));
         }
-
-
 
         List<Map<String, Object>> nextMovesData = (List<Map<String, Object>>) moveData.get("s");
         for (Map<String, Object> nextMoveData : nextMovesData) {
@@ -104,17 +145,5 @@ public class ChessMovesToFen {
         }
     }
 
-    @Getter
-    @Setter
-    static class MoveInfo {
-        String bestMove;
-        double score;
-        double depth;
 
-        MoveInfo(String bestMove, double score, double depth) {
-            this.bestMove = bestMove;
-            this.score = score;
-            this.depth = depth;
-        }
-    }
 }

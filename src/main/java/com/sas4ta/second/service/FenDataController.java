@@ -1,6 +1,7 @@
 package com.sas4ta.second.service;
 
 import com.sas4ta.second.data.ChessMove;
+import com.sas4ta.second.data.ChessMoveFen;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,8 +23,13 @@ public class FenDataController {
         return fenDataService.getAllData();
     }
 
-//    @GetMapping("/fendata")
-//    public ChessMove getFenData(@RequestParam String fen) {
-//        return fenDataService.getFenDataByFen(fen);
-//    }
+    @GetMapping("/fenbase")
+    public List<ChessMoveFen> getAllFenData() {
+        return fenDataService.getAllFenData();
+    }
+
+    @GetMapping("/fendata")
+    public ChessMoveFen getFenData(@RequestParam String fen) {
+        return fenDataService.getFenDataByFen(fen);
+    }
 }
