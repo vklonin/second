@@ -9,10 +9,14 @@ WORKDIR /second
 COPY pom.xml .
 
 # Download the dependencies
-RUN mvn dependency:go-offline -B
+# RUN mvn dependency:go-offline -B
 
 # Copy the project source
 COPY src src
+
+COPY libs libs
+
+RUN mvn install:install-file -Dfile=libs/Chesspresso.jar -DgroupId=net.sourceforge.chesspresso -DartifactId=chesspresso -Dversion=0.9.2 -Dpackaging=jar
 
 # Package the application
 RUN mvn package -DskipTests
