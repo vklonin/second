@@ -11,8 +11,9 @@ mvn spring-boot:run
 make sure that my-mongo name is avalible for a docker container name - or rename it
 
 ### check application
-http://localhost:8080/api/base
 
-http://localhost:8080/api/fenbase
+```curl -u user1:password1 http://localhost:8080/api/base```
 
-http://localhost:8080/api/fendata?fen=rnbqkb1r/pppppppp/8/3n4/2PP4/8/PP2PPPP/RNBQKBNR%20w%20KQkq%20-%201%203
+```curl -u user2:password2 http://localhost:8080/api/fenbase```
+
+```curl -u user2:password2 http://localhost:8080/api/fendata?fen=rnbqkb1r/pppppppp/8/3n4/2PP4/8/PP2PPPP/RNBQKBNR%20w%20KQkq%20-%201%203```

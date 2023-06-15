@@ -5,6 +5,7 @@ import com.sas4ta.second.data.ChessMoveFen;
 import com.sas4ta.second.data.ChessMoveFenRepository;
 import com.sas4ta.second.data.ChessMoveRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,13 +30,9 @@ public class FenDataService {
         return chessMoveFenRepository.findAll();
     }
 
+    @PreAuthorize("hasRole('USEREXT')")
     public ChessMoveFen getFenDataByFen(String fen) {
         return chessMoveFenRepository.findFirstByFen(fen);
     }
 
-//    public ChessMove getFenDataByFen(String fen) {
-//        // TODO: Implement FEN data fetching based on FEN string
-//        // This could require more complex MongoDB query or even processing after fetching the data.
-//        // We need more details about how the FEN string maps to the stored data.
-//    }
 }
